@@ -1,8 +1,10 @@
-module Main (main) where
+module Main where
 
-import Lib
+import Board (createBoard)
+import Player (Player(..))
+import Game (gameLoop)
 
 main :: IO ()
 main = do
     let board = createBoard 8
-    gameLoop board Player1
+    gameLoop board PlayerOne

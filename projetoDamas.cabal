@@ -25,7 +25,10 @@ source-repository head
 
 library
   exposed-modules:
-      Lib
+      Board
+      Content
+      Game
+      Player
   other-modules:
       Paths_projetoDamas
   autogen-modules:
