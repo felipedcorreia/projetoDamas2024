@@ -38,7 +38,7 @@ createBoard size = [[initialSetCell r c | c <- [0..size-1]] | r <- [0..size-1]]
 
 -- Função para mostrar uma célula do tabuleiro
 showCell :: Cell -> String
-showCell (content, color, _) = color ++ show content ++ "\x1b[0m"  -- Reset da cor
+showCell (content, color, _) = color ++ show content ++ "\x1b[0m"
 
 -- Função para mostrar o tabuleiro
 showBoard :: Board -> IO ()
@@ -50,7 +50,40 @@ showBoard board = do
   where
     showRow letters (rowNum, row) = letters !! (rowNum - 1) : " " ++ concatMap (\cell -> showCell cell ++ "") row
 
+-- Função para capturar as coordenadas
+getCoord :: String -> IO Coord
+getCoord prompt = do
+    putStrLn prompt
+    input <- getLine
+    let [r, c] = map read (words input) :: [Int]
+    return (r, c)
+
+-- Função para mover uma peça
+movePiece :: Board -> Coord -> Coord -> Board
+movePiece board (r1, c1) (r2, c2) =
+    if isValidMove (r1, c1) (r2, c2)
+    then [ [ updateCell r c | c <- [0..7] ] | r <- [0..7] ]
+    else board
+  where
+    (content, color, coord) = board !! r1 !! c1
+    updateCell r c
+        | (r, c) == (r1, c1) = (Empty, color, coord)
+        | (r, c) == (r2, c2) = (content, color, (r2, c2))
+        | otherwise = board !! r !! c
+
+isValidMove :: Coord -> Coord -> Bool
+isValidMove (r1, c1) (r2, c2) =
+    r2 >= 0 && r2 < 8 && c2 >= 0 && c2 < 8 
+
 someFunc :: IO ()
 someFunc = do
     let newBoard = createBoard 8
-    showBoard newBoard
+    gameLoop newBoard
+
+gameLoop :: Board -> IO ()
+gameLoop board = do
+    showBoard board
+    start <- getCoord "Digite as coordenadas da peça que deseja mover (linha coluna):"
+    end <- getCoord "Digite as coordenadas para onde deseja mover (linha coluna):"
+    let newBoard = movePiece board start end
+    gameLoop newBoard
