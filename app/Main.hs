@@ -3,4 +3,6 @@ module Main (main) where
 import Lib
 
 main :: IO ()
-main = someFunc
+main = do
+    let board = createBoard 8
+    gameLoop board Player1
