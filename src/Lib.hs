@@ -1,9 +1,11 @@
-module Lib
-    ( someFunc
-    ) where
+module Main where
+
 import Data.List
+import Data.Maybe (fromJust, isNothing)
 
 data Content = Black | White | Empty | WhiteDama | BlackDama deriving (Eq, Read)
+
+data Player = Player1 | Player2 deriving (Eq, Show)
 
 instance Show Content where
     show Black = " ● "
@@ -13,8 +15,7 @@ instance Show Content where
     show WhiteDama = " ⓞ "
 
 type Coord = (Int, Int)
-type Cell = (Content, String, Coord)  -- (Conteudo, Cor, Coordenada)
-
+type Cell = (Content, String, Coord)
 type Board = [[Cell]]
 
 -- Função para criar uma célula do tabuleiro
@@ -50,7 +51,51 @@ showBoard board = do
   where
     showRow letters (rowNum, row) = letters !! (rowNum - 1) : " " ++ concatMap (\cell -> showCell cell ++ "") row
 
-someFunc :: IO ()
-someFunc = do
-    let newBoard = createBoard 8
-    showBoard newBoard
+-- Função para mover uma peça
+movePiece :: Board -> Coord -> Coord -> Board
+movePiece board (fromX, fromY) (toX, toY) = 
+    let piece = fst3 (board !! fromX !! fromY)
+        board' = replaceElemAt board (fromX, fromY) Empty
+    in replaceElemAt board' (toX, toY) piece
+  where
+    fst3 (x, _, _) = x
+
+-- Função para substituir um elemento no tabuleiro
+replaceElemAt :: Board -> Coord -> Content -> Board
+replaceElemAt board (r, c) newContent = 
+    let (beforeRow, row:afterRow) = splitAt r board
+        (beforeCell, cell:afterCell) = splitAt c row
+    in beforeRow ++ [beforeCell ++ [newContent, snd3 cell, thd3 cell] : afterCell] ++ afterRow
+  where
+    snd3 (_, y, _) = y
+    thd3 (_, _, z) = z
+
+-- Função para obter a jogada dos jogadores
+getPlayerMove :: Player -> IO (Coord, Coord)
+getPlayerMove player = do
+    putStrLn $ show player ++ ", insira a posição da peça que deseja mover (linha coluna):"
+    from <- getLine
+    putStrLn "Insira a posição para onde deseja mover (linha coluna):"
+    to <- getLine
+    return (readCoord from, readCoord to)
+  where
+    readCoord :: String -> Coord
+    readCoord input = let [r, c] = map read (words input) in (r, c)
+
+-- Função principal para iniciar o jogo
+gameLoop :: Board -> Player -> IO ()
+gameLoop board player = do
+    showBoard board
+    (from, to) <- getPlayerMove player
+    let board' = movePiece board from to
+    gameLoop board' (nextPlayer player)
+  where
+    nextPlayer Player1 = Player2
+    nextPlayer Player2 = Player1
+
+-- Função inicial
+main :: IO ()
+main = do
+    let board = createBoard 8
+    gameLoop board Player1
+
